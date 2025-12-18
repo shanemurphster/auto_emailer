@@ -1,12 +1,3 @@
-function onOpen() {
-  SpreadsheetApp.getUi()
-    .createMenu('LawQuoteCollector')
-    .addItem('Create Drafts', 'createDrafts')
-    .addItem('Send First N Drafts', 'sendFirstDraftsPrompt')
-    .addItem('Mark Selected as Sent', 'markSelectedAsSent')
-    .addToUi();
-}
-
 function templateSubject(contact) {
   // Customize as needed
   return 'Short quote/anecdote request';
@@ -14,11 +5,18 @@ function templateSubject(contact) {
 
 function templateBody(contact) {
   // Customize as needed; drafts only, never auto-send
-  const name = contact.name || 'Professor';
+  const rawName = String(contact.name || '').trim();
+  // If no name provided or the name is the literal "Email", use a generic salutation.
+  let greeting;
+  if (!rawName || rawName.toLowerCase() === 'email') {
+    greeting = 'Dear Professor,';
+  } else {
+    greeting = `Dear Professor ${rawName},`;
+  }
   const lines = [
-    `Dear Professor ${name},`,
+    greeting,
     '',
-    `I'm a student working on a small project collecting brief quotes and anecdotes from esteemed law professors.`,
+    `I'm a student at the University of Pennsylvania working on a small project for my Legal Practices class collecting brief quotes and anecdotes from esteemed law professors.`,
   ];
 
   if (contact.affiliation) {
@@ -221,5 +219,62 @@ function ensureSheetWithHeaders(ss, name, headers) {
   return sh;
 }
 
+function sendToLabelRecipients() {
+  const labelName = 'followup_law';
+  const bodyText = ['Thank you for responding, I am a student at the University of Pennsylvania, and it is for a project in my Legal Practices.',
+  '',
+  '-Shane Murphy' ].join('\n'); // Customize
+
+  const label = GmailApp.getUserLabelByName(labelName);
+  if (!label) {
+    SpreadsheetApp.getUi().alert(`Label '${labelName}' not found.`);
+    return;
+  }
+
+  const threads = label.getThreads();
+  let replyCount = 0;
+
+  const userEmail = Session.getActiveUser().getEmail();
+
+  for (const thread of threads) {
+    const messages = thread.getMessages();
+    if (messages.length === 0) continue;
+
+    // Find the last message from someone else
+    let lastRecipientMessage = null;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
+      if (msg.getFrom().indexOf(userEmail) === -1) {
+        lastRecipientMessage = msg;
+        break;
+      }
+    }
+
+    if (!lastRecipientMessage) continue; // No message from recipient
+
+    // Reply to the last recipient's message, excluding self
+    const to = lastRecipientMessage.getFrom();
+    const cc = lastRecipientMessage.getCc().split(',').filter(email => email.trim() !== userEmail).join(',');
+    const bcc = lastRecipientMessage.getBcc().split(',').filter(email => email.trim() !== userEmail).join(',');
+
+    thread.reply(bodyText, {
+      cc: cc || undefined,
+      bcc: bcc || undefined
+    });
+    replyCount++;
+  }
+
+  SpreadsheetApp.getUi().alert(`Created ${replyCount} follow-up reply drafts.`);
+}
+
+
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu('LawQuoteCollector')
+    .addItem('Create Drafts', 'createDrafts')
+    .addItem('Send to Label Recipients', 'sendToLabelRecipients')
+    .addItem('Mark Selected as Sent', 'markSelectedAsSent')
+    .addToUi();
+}
 
 

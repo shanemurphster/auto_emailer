@@ -46,7 +46,8 @@ python main.py scrape "<HARVARD_DIRECTORY_URL>" \
 ```
 
 Notes:
-- Respects `robots.txt` and uses polite delays.
+- Respects `robots.txt` and uses polite delays (use --skip-robots to ignore, at your own risk).
+- For JS-heavy sites, use --use-playwright (requires `pip install playwright` and `playwright install`).
 - Extracts `mailto:` addresses; missing emails are skipped.
 - Duplicates are skipped across runs by email.
 

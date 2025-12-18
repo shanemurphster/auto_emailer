@@ -43,4 +43,36 @@ try:
 except Exception:
 	pass
 
+try:
+	from . import stanford_law as _stanford_law
+	register("stanford", _stanford_law.parse_contacts)
+except Exception:
+	pass
+
+try:
+	from . import pennstate_law as _pennstate_law
+	register("pennstate", _pennstate_law.parse_contacts)
+except Exception:
+	pass
+
+try:
+	from . import duke_law as _duke_law
+	register("duke", _duke_law.parse_contacts)
+except Exception:
+	pass
+
+try:
+	from . import uchicago_law as _uchicago_law
+	# allow both 'uchicago' and 'uchicago_law' keys
+	register("uchicago", _uchicago_law.parse_contacts)
+	register("uchicago_law", _uchicago_law.parse_contacts)
+except Exception:
+	pass
+
+try:
+	from . import nyu_law as _nyu_law
+	register("nyu", _nyu_law.parse_contacts)
+except Exception:
+	pass
+
 
